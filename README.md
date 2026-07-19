@@ -1,9 +1,19 @@
 # ESPHome Heltec Wireless Paper V1.2 E-Paper Driver
 
-ESPHome External Component für das **Heltec Wireless Paper V1.2** mit dem integrierten
-2,13"-E-Paper-Display **E0213A367-BW**.
+ESPHome External Component für das **Heltec Wireless Paper V1.2** mit dem integrierten 2,13-Zoll-E-Paper-Display **E0213A367-BW**.
+
+Die Komponente ermöglicht die Verwendung des Displays in ESPHome und Home Assistant mit:
+
+- vollständigem Display-Refresh
+- schnellem Partial Refresh
+- automatischem Full Refresh nach einer einstellbaren Anzahl von Updates
+- ESPHome Display-Lambdas
+- Home-Assistant-Sensoren
+- lokalem oder direktem GitHub-Import
 
 ## Status
+
+Aktueller Entwicklungsstand: v0.2
 
 **Entwicklungsstand:** `v0.3.0-dev`
 
