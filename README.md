@@ -1,4 +1,4 @@
-# ESPHome Heltec Wireless Paper V1.2 — 0.2.0-rc1
+# ESPHome Heltec Wireless Paper V1.2 — 0.3.0-rc1
 
 ESPHome external component for the Heltec Wireless Paper V1.2 and its
 E0213A367-BW monochrome panel.
