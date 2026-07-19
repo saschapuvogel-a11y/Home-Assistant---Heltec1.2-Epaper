@@ -1,0 +1,83 @@
+esphome:
+  name: heltec-wireless-paper
+  friendly_name: Heltec E-Paper
+
+  on_boot:
+    priority: -100
+    then:
+      - delay: 5s
+      - component.update: epaper
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: arduino
+
+external_components:
+  - source:
+      type: local
+      path: components
+    components: [heltec_epaper]
+
+logger:
+  level: DEBUG
+
+api:
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+safe_mode:
+  disabled: false
+
+light:
+  - platform: status_led
+    name: "Status LED"
+    pin: GPIO18
+
+# IMPORTANT: GPIO3/GPIO2 are the dedicated E-Paper SPI pins.
+# GPIO9/GPIO10 belong to the SX1262 LoRa radio.
+spi:
+  clk_pin: GPIO3
+  mosi_pin: GPIO2
+
+font:
+  - file: "gfonts://Roboto"
+    id: font_main
+    size: 22
+
+display:
+  - platform: heltec_epaper
+    id: epaper
+
+    cs_pin: GPIO4
+    dc_pin: GPIO5
+    reset_pin: GPIO6
+
+    busy_pin:
+      number: GPIO7
+
+    # Active LOW. Do not mark this pin inverted; the driver performs the LOW write.
+    power_pin:
+      number: GPIO45
+      ignore_strapping_warning: true
+
+    power_on_delay: 100ms
+    busy_timeout: 20s
+
+    rotation: 90
+    update_interval: 30s
+
+    # 1 = only full refreshes. 10 = one full, then nine partial refreshes.
+    full_update_every: 10
+
+    lambda: |-
+      it.fill(COLOR_OFF);
+      it.rectangle(0, 0, it.get_width() - 1, it.get_height() - 1, COLOR_ON);
+      it.print(12, 10, id(font_main), COLOR_ON, "Heltec V1.2");
+      it.print(12, 44, id(font_main), COLOR_ON, "ESPHome 0.2");
+      it.print(12, 78, id(font_main), COLOR_ON, "Full + Partial");
