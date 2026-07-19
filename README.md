@@ -62,3 +62,19 @@ components/
 - Beispiele
 - Deep-Sleep-Unterstützung
 - Weitere Heltec-Displays
+
+## Lizenz
+
+... muss sein: MIT-Lizenz.
+
+## Danksagung
+
+Dieses Projekt basiert auf der Analyse der Heltec-Wireless-Paper-Hardware und der verfügbaren Heltec-E-Ink-Treiber.
+
+Besonderer Dank gilt den Entwicklern der ursprünglichen Heltec-E-Ink-Unterstützung sowie dem ESPHome-Projekt.
+
+## Haftungsausschluss
+
+Die Nutzung erfolgt auf eigene Verantwortung.
+
+Das Projekt ist ein unabhängiges Community-Projekt und steht in keiner offiziellen Verbindung zu Heltec Automation, ESPHome oder Home Assistant.
