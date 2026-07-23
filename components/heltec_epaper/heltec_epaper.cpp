@@ -16,12 +16,16 @@ void HeltecE0213A367::setup() {
   this->dc_pin_->setup();
   this->dc_pin_->digital_write(false);
   this->reset_pin_->setup();
-  this->reset_pin_->digital_write(true);
+  this->reset_pin_->digital_write(false);
   this->busy_pin_->setup();
   this->power_pin_->setup();
 
-  // GPIO45 supplies the board peripherals. It is active LOW on Wireless Paper V1.2.
-  this->power_on_();
+  // GPIO45 supplies the board peripherals and is active LOW.
+  // Start with VEXT disabled, then let wake_up() perform a clean sequence.
+  this->power_pin_->digital_write(true);
+  this->powered_ = false;
+  this->sleeping_ = true;
+
   this->spi_setup();
 
   this->init_internal_(BUFFER_SIZE);
@@ -32,19 +36,34 @@ void HeltecE0213A367::setup() {
   }
   std::memset(this->buffer_, 0xFF, BUFFER_SIZE);
 
-  if (!this->initialize_panel_()) {
+  if (!this->wake_up()) {
     ESP_LOGE(TAG, "Display initialization failed");
     this->mark_failed();
     return;
   }
 
-  this->initialized_ = true;
   ESP_LOGI(TAG, "E0213A367 initialized");
 }
 
 void HeltecE0213A367::power_on_() {
+  if (this->powered_)
+    return;
+
   this->power_pin_->digital_write(false);
+  this->powered_ = true;
   delay(this->power_on_delay_ms_);
+}
+
+void HeltecE0213A367::power_off_() {
+  // Keep interface pins at defined levels before removing VEXT.
+  this->reset_pin_->digital_write(false);
+  this->dc_pin_->digital_write(false);
+  this->power_pin_->digital_write(true);
+
+  this->powered_ = false;
+  this->initialized_ = false;
+  this->sleeping_ = true;
+  this->refresh_mode_ = RefreshMode::UNKNOWN;
 }
 
 void HeltecE0213A367::hard_reset_() {
@@ -89,7 +108,6 @@ void HeltecE0213A367::data_array_(const uint8_t *data, size_t length) {
 }
 
 bool HeltecE0213A367::initialize_panel_() {
-  this->power_on_();
   this->hard_reset_();
   if (!this->wait_until_idle_("hardware reset"))
     return false;
@@ -100,6 +118,52 @@ bool HeltecE0213A367::initialize_panel_() {
 
   this->refresh_mode_ = RefreshMode::UNKNOWN;
   return this->select_refresh_mode_(RefreshMode::FULL);
+}
+
+bool HeltecE0213A367::wake_up() {
+  if (this->is_failed())
+    return false;
+
+  if (this->powered_ && this->initialized_ && !this->sleeping_)
+    return true;
+
+  ESP_LOGI(TAG, "Waking E0213A367 and enabling VEXT");
+  this->power_on_();
+
+  if (!this->initialize_panel_()) {
+    ESP_LOGE(TAG, "E0213A367 wake-up failed");
+    this->power_off_();
+    return false;
+  }
+
+  this->initialized_ = true;
+  this->sleeping_ = false;
+  ESP_LOGI(TAG, "E0213A367 awake");
+  return true;
+}
+
+bool HeltecE0213A367::sleep() {
+  if (!this->powered_) {
+    this->sleeping_ = true;
+    return true;
+  }
+
+  ESP_LOGI(TAG, "Putting E0213A367 into deep sleep and disabling VEXT");
+
+  if (!this->wait_until_idle_("pre-sleep")) {
+    this->status_set_warning("Display pre-sleep BUSY timeout");
+    return false;
+  }
+
+  // Controller deep-sleep command. A hardware reset is required after wake-up.
+  this->command_(0x10);
+  this->data_(0x01);
+  delay(100);
+
+  this->power_off_();
+  this->status_clear_warning();
+  ESP_LOGI(TAG, "E0213A367 asleep; VEXT disabled");
+  return true;
 }
 
 bool HeltecE0213A367::select_refresh_mode_(RefreshMode mode) {
@@ -200,8 +264,14 @@ bool HeltecE0213A367::end_image_tx_quiet_() {
 }
 
 void HeltecE0213A367::update() {
-  if (!this->initialized_ || this->is_failed())
+  if (this->is_failed())
     return;
+
+  // A periodic or manual update may follow an explicit display sleep.
+  if (!this->wake_up()) {
+    this->status_set_warning("Display wake-up failed");
+    return;
+  }
 
   const uint32_t started = millis();
   this->do_update_();
@@ -261,12 +331,14 @@ void HeltecE0213A367::draw_absolute_pixel_internal(int x, int y, Color color) {
 
 void HeltecE0213A367::dump_config() {
   ESP_LOGCONFIG(TAG, "Heltec Wireless Paper E-Paper:");
-  ESP_LOGCONFIG(TAG, "  Driver version: 0.2.0-rc1");
+  ESP_LOGCONFIG(TAG, "  Driver version: 0.3.0-rc1");
   ESP_LOGCONFIG(TAG, "  Model: E0213A367 (Wireless Paper V1.2)");
   ESP_LOGCONFIG(TAG, "  Visible dimensions: %d x %d", VISIBLE_WIDTH, PANEL_HEIGHT);
   ESP_LOGCONFIG(TAG, "  Controller RAM: %d x %d", PANEL_WIDTH, PANEL_HEIGHT);
   ESP_LOGCONFIG(TAG, "  Full update every: %u refresh(es)",
                 static_cast<unsigned>(this->full_update_every_));
+  ESP_LOGCONFIG(TAG, "  VEXT state: %s", this->powered_ ? "ON" : "OFF");
+  ESP_LOGCONFIG(TAG, "  Panel state: %s", this->sleeping_ ? "SLEEP" : "AWAKE");
   LOG_PIN("  DC Pin: ", this->dc_pin_);
   LOG_PIN("  Reset Pin: ", this->reset_pin_);
   LOG_PIN("  Busy Pin: ", this->busy_pin_);

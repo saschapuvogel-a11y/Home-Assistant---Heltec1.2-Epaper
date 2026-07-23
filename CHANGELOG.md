@@ -1,17 +1,19 @@
 # Changelog
 
-## 0.2.0-rc1
+## 0.3.0-rc1
 
-- Added experimental partial/differential refresh.
-- Added `full_update_every` configuration.
-- Added automatic full/partial waveform switching.
-- Added update number, mode, and duration logging.
-- Corrected example SPI pins to GPIO3/GPIO2.
-- Corrected ESPHome 2026.x inheritance and registration.
-- Documented GPIO45 VEXT handling and two-board confirmation.
+- Added public `sleep()` and `wake_up()` methods.
+- Added E0213A367 deep-sleep command followed by VEXT shutdown.
+- Added automatic panel wake-up and full reinitialization before an update.
+- Added explicit power and sleep state tracking.
+- Removed duplicate VEXT activation during setup.
+- Updated driver version logging.
+- Added dashboard and deep-sleep examples.
+- Added power-measurement protocol and design documentation.
+- Sanitized Wi-Fi credentials and introduced `secrets.example.yaml`.
 
-## 0.1.0-frozen
+## 0.2.x
 
-- Known-good full-refresh baseline.
-- Confirmed on two Heltec Wireless Paper V1.2 boards.
-- E0213A367, VEXT GPIO45, display SPI GPIO3/GPIO2.
+- Stable full and partial refresh.
+- Stable BUSY handling.
+- Differential frame reference update without visible second refresh.

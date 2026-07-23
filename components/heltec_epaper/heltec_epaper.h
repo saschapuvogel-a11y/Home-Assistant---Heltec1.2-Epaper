@@ -26,6 +26,12 @@ class HeltecE0213A367
   void update() override;
   void dump_config() override;
 
+  // Public power-management methods for ESPHome lambdas.
+  // The panel retains the displayed image without power.
+  bool sleep();
+  bool wake_up();
+  bool is_sleeping() const { return this->sleeping_; }
+
   float get_setup_priority() const override { return setup_priority::PROCESSOR; }
 
  protected:
@@ -48,6 +54,7 @@ class HeltecE0213A367
   void draw_absolute_pixel_internal(int x, int y, Color color) override;
 
   void power_on_();
+  void power_off_();
   void hard_reset_();
   bool wait_until_idle_(const char *operation);
 
@@ -78,6 +85,8 @@ class HeltecE0213A367
 
   RefreshMode refresh_mode_{RefreshMode::UNKNOWN};
   bool initialized_{false};
+  bool powered_{false};
+  bool sleeping_{true};
 };
 
 }  // namespace heltec_epaper

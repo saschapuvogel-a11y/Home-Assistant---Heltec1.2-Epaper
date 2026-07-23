@@ -1,90 +1,67 @@
-# ESPHome Heltec Wireless Paper V1.2 E-Paper Driver
+# Home Assistant – Heltec Wireless Paper V1.2 E-Paper
 
-ESPHome External Component für das **Heltec Wireless Paper V1.2** mit dem integrierten 2,13-Zoll-E-Paper-Display **E0213A367-BW**.
+> **Mission:** Das Referenzprojekt für Home-Assistant-E-Paper-Dashboards.
 
-Die Komponente ermöglicht die Verwendung des Displays in ESPHome und Home Assistant mit:
+ESPHome external component for the Heltec Wireless Paper V1.2 with the E0213A367 2.13-inch monochrome e-paper panel.
 
-- vollständigem Display-Refresh
-- schnellem Partial Refresh
-- automatischem Full Refresh nach einer einstellbaren Anzahl von Updates
-- ESPHome Display-Lambdas
-- Home-Assistant-Sensoren
-- lokalem oder direktem GitHub-Import
+## v0.3.0-rc1
 
-## Status
+This release candidate adds panel sleep, VEXT power-off and wake-up/reinitialization while retaining the stable v0.2 refresh implementation.
 
-Aktueller Entwicklungsstand: v0.2
+## Hardware pins
 
-**Entwicklungsstand:** `v0.3.0-dev`
-
-Getestet mit:
-- Heltec Wireless Paper V1.2
-- ESP32-S3
-- ESPHome 2026.7.0
-- Arduino Framework
+| Function | GPIO |
+|---|---:|
+| SPI CLK | 3 |
+| SPI MOSI | 2 |
+| CS | 4 |
+| DC | 5 |
+| RESET | 6 |
+| BUSY | 7 |
+| VEXT, active LOW | 45 |
+| Status LED | 18 |
 
 ## Installation
 
+Copy this repository structure into the ESPHome configuration directory. Keep `components/heltec_epaper/` next to the YAML or adjust the local component path.
+
+Copy `secrets.example.yaml` to `secrets.yaml` and enter the Wi-Fi credentials.
+
+Start with:
+
+- `examples/01_dashboard.yaml` for continuous operation
+- `examples/09_deep_sleep.yaml` for battery testing
+
+## Display power methods
+
+The methods can be used in an ESPHome lambda:
+
 ```yaml
-external_components:
-  - source:
-      type: git
-      url: https://github.com/MC-screwdriver/Home-Assistant---Heltec1.2-Epaper
-      ref: main
-    components:
-      - heltec_epaper
+- lambda: |-
+    id(epaper).sleep();
 ```
 
-## Pinbelegung
+A later display update wakes and reinitializes the panel automatically:
 
-| Funktion | GPIO |
-|----------|------|
-| CLK | GPIO3 |
-| MOSI | GPIO2 |
-| CS | GPIO4 |
-| DC | GPIO5 |
-| RESET | GPIO6 |
-| BUSY | GPIO7 |
-| VEXT | GPIO45 |
-
-## Hinweise
-
-- Partial Refresh: ca. 853–855 ms
-- Full Refresh: ca. 1755–1757 ms
-- `GPIO3` und `GPIO45` sind Strapping-Pins und erzeugen in ESPHome Warnungen.
-- Nicht gleichzeitig `update_interval` **und** `component.update` mit gleichem Intervall verwenden.
-
-## Projektstruktur
-
-```
-components/
-└── heltec_epaper/
-    ├── __init__.py
-    ├── display.py
-    ├── heltec_epaper.cpp
-    └── heltec_epaper.h
+```yaml
+- component.update: epaper
 ```
 
-## Roadmap
+Manual wake-up is also available:
 
-- v0.3 Treiber aufräumen
-- GitHub-Dokumentation
-- Beispiele
-- Deep-Sleep-Unterstützung
-- Weitere Heltec-Displays
+```yaml
+- lambda: |-
+    id(epaper).wake_up();
+```
 
-## Lizenz
+## Important test status
 
-... muss sein: MIT-Lizenz.
+v0.3.0-rc1 is deliberately marked as a release candidate. Full and partial refresh are based on the proven v0.2 implementation. The new sleep/VEXT sequence must be verified on the physical Wireless Paper V1.2 before v0.3 is declared stable.
 
-## Danksagung
+## Security
 
-Dieses Projekt basiert auf der Analyse der Heltec-Wireless-Paper-Hardware und der verfügbaren Heltec-E-Ink-Treiber.
+Never store real Wi-Fi credentials in committed YAML files. Use ESPHome secrets.
 
-Besonderer Dank gilt den Entwicklern der ursprünglichen Heltec-E-Ink-Unterstützung sowie dem ESPHome-Projekt.
+## License
 
-## Haftungsausschluss
-
-Die Nutzung erfolgt auf eigene Verantwortung.
-
-Das Projekt ist ein unabhängiges Community-Projekt und steht in keiner offiziellen Verbindung zu Heltec Automation, ESPHome oder Home Assistant.
+MIT
